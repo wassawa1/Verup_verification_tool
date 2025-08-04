@@ -1,0 +1,55 @@
+# Python 関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 仮想環境
+venv/
+ENV/
+env/
+.env
+
+# IDE/エディタ関連
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS関連
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# プロジェクト固有のファイル
+report.csv
+report.html
+logs/
+artifacts/
+
+# 入力ファイルの例外 (一部はgitで管理するかもしれないので)
+# inputs/sample*.txt を管理したい場合は以下をコメントアウト
+# inputs/
+
+# デモ生成物とログは除外
+Apps/DemoTool/
