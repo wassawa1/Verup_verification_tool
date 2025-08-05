@@ -3,6 +3,7 @@
 レポート生成機能を提供するモジュール
 """
 import os
+import re
 import csv
 import datetime
 from utils.parser import parse_content_for_structured_data
@@ -21,6 +22,7 @@ class Report:
         {'phase': '成果物', 'item': '計算結果精度検証', 'success_memo': '期待通り', 'failed_memo': '精度低下', 'link_type': 'compare_artifacts'},
         {'phase': '成果物', 'item': 'パフォーマンス検証', 'success_memo': '5%向上', 'failed_memo': '性能低下', 'link_type': 'log'},
         {'phase': '成果物', 'item': 'サマリー情報検証', 'success_memo': '問題なし', 'failed_memo': '不整合あり', 'link_type': 'new_artifact'},
+        {'phase': 'ログ', 'item': 'ログ検証', 'success_memo': '差異なし/改善', 'failed_memo': 'エラー増加', 'link_type': 'log_diff'},
         {'phase': 'ログ', 'item': '警告・エラー解析', 'success_memo': 'エラーなし', 'failed_memo': '警告メッセージあり', 'link_type': 'log'},
         {'phase': '総括', 'item': 'バージョン互換性評価', 'success_memo': '安全に移行可', 'failed_memo': '要対応事項あり', 'link_type': 'report'}
     ]
@@ -33,6 +35,7 @@ class Report:
             {'phase': '成果物', 'item': '計算結果精度検証', 'success_memo': '期待通り', 'failed_memo': '精度低下', 'link_type': 'compare_artifacts'},
             {'phase': '成果物', 'item': 'パフォーマンス検証', 'success_memo': '5%向上', 'failed_memo': '性能低下', 'link_type': 'log'},
             {'phase': '成果物', 'item': 'サマリー情報検証', 'success_memo': '問題なし', 'failed_memo': '不整合あり', 'link_type': 'new_artifact'},
+            {'phase': 'ログ', 'item': 'ログ検証', 'success_memo': '差異なし/改善', 'failed_memo': 'エラー増加', 'link_type': 'log'},
             {'phase': 'ログ', 'item': '警告・エラー解析', 'success_memo': 'エラーなし', 'failed_memo': '警告メッセージあり', 'link_type': 'log'},
             {'phase': '総括', 'item': 'バージョン互換性評価', 'success_memo': '安全に移行可', 'failed_memo': '要対応事項あり', 'link_type': 'report'}
         ],
@@ -42,6 +45,7 @@ class Report:
             {'phase': '成果物', 'item': '計算結果精度検証', 'success_memo': '期待通り', 'failed_memo': '精度低下', 'link_type': 'compare_artifacts'},
             {'phase': '成果物', 'item': 'メモリ使用量検証', 'success_memo': '改善', 'failed_memo': '悪化', 'link_type': 'log'}, # ICC2固有の項目
             {'phase': '成果物', 'item': 'サマリー情報検証', 'success_memo': '問題なし', 'failed_memo': '不整合あり', 'link_type': 'new_artifact'},
+            {'phase': 'ログ', 'item': 'ログ検証', 'success_memo': '差異なし/改善', 'failed_memo': 'エラー増加', 'link_type': 'log'},
             {'phase': 'ログ', 'item': '警告・エラー解析', 'success_memo': 'エラーなし', 'failed_memo': '警告メッセージあり', 'link_type': 'log'},
             {'phase': '総括', 'item': 'バージョン互換性評価', 'success_memo': '安全に移行可', 'failed_memo': '要対応事項あり', 'link_type': 'report'}
         ]
@@ -432,6 +436,10 @@ body {{
                 item_status = result.get(f'status_{item_name}', status)
                 item_timestamp = result.get(f'timestamp_{item_name}', result_timestamp)
                 
+                # デバッグ用にコンソールに出力
+                if phase == 'ログ':
+                    print(f"DEBUG: ログ観点の項目 '{item_name}', ステータス: {item_status}")
+                
                 # N/A（評価対象外）のものは表示しない
                 if item_status == 'N/A':
                     continue
@@ -452,9 +460,41 @@ body {{
                 # リンクを設定
                 link_html = ''
                 if link_type == 'log':
-                    if latest_log and os.path.exists(latest_log):
+                    # ツール固有のリンク設定を使用（link_項目名が設定されていれば優先）
+                    specific_link = result.get(f'link_{item_name}', '')
+                    if specific_link and specific_link.startswith('['):
+                        # [実行ログ](パス) 形式のリンク
+                        match = re.search(r'\[([^\]]+)\]\(([^)]+)\)', specific_link)
+                        if match:
+                            link_text = match.group(1)
+                            link_path = match.group(2)
+                            if os.path.exists(link_path):
+                                has_valid_link = True
+                                # リンクテキストに応じて表示を変更
+                                if link_text == "ログ差分":
+                                    link_html = f'<a href="{link_path}" target="_blank" style="color: #0366d6; font-weight: bold;">{link_text}</a>'
+                                else:
+                                    link_html = f'<a href="{link_path}" target="_blank">{link_text}</a>'
+                            else:
+                                link_html = f'{link_text}（ファイルなし）'
+                    # 通常のログファイル
+                    elif latest_log and os.path.exists(latest_log):
                         has_valid_link = True
                         link_html = f'<a href="{latest_log}">実行ログ</a>'
+                    # ICC2_smokeなど特殊なログパスのツール
+                    elif tool_name in ["ICC2_smoke"]:
+                        log_dir = os.path.join("Apps", tool_name, "logs")
+                        if os.path.exists(log_dir):
+                            log_pattern = f"{tool_name}_{old_version}_{new_version}_"
+                            log_files = [f for f in os.listdir(log_dir) if f.startswith(log_pattern)]
+                            if log_files:
+                                latest_tool_log = f"{log_dir}/{log_files[-1]}"
+                                has_valid_link = True
+                                link_html = f'<a href="{latest_tool_log}">実行ログ</a>'
+                            else:
+                                link_html = 'ログなし'
+                        else:
+                            link_html = 'ログなし'
                     else:
                         link_html = 'ログなし'
                 elif link_type == 'new_artifact':
@@ -469,6 +509,14 @@ body {{
                         link_html = f'<a href="{artifact_old}">旧</a>→<a href="{artifact_new}">新</a>'
                     else:
                         link_html = '成果物なし'
+                elif link_type == 'log_diff':
+                    # ログdiffのリンクを設定
+                    diff_path = result.get('diff_path')
+                    if diff_path and os.path.exists(diff_path):
+                        has_valid_link = True
+                        link_html = f'<a href="{diff_path}" target="_blank" style="color: #0366d6;">ログ差分</a>'
+                    else:
+                        link_html = '差分なし'
                 elif link_type == 'report':
                     # レポートは常に存在すると仮定
                     has_valid_link = True

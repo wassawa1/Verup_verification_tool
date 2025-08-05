@@ -1,0 +1,15 @@
+
+Crosstalk Analysis Report
+======================
+
+Total Nets: 3246
+Analyzed Nets: 2875
+Crosstalk Violations: 3
+
+Max Noise: 0.24V
+Noise Margin: 0.18V
+
+Worst Offenders:
+  - net1: victim=data_in[2], aggressor=data_in[3], noise=0.24V
+  - net2: victim=data_reg[5], aggressor=data_reg[6], noise=0.22V
+  - net3: victim=clk_buf, aggressor=rst_n, noise=0.19V

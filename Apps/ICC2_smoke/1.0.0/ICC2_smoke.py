@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ICC2_smoke.py - Synopsys ICC2 Smoke Test Tool
+ICC2_smoke.py - Synopsys ICC2 Smoke Test Tool (Version 1.0.0)
 
 このツールはSynopsys IC Compilerの設計データを読み込み、基本的なチェックを実行します。
 以下のファイルをサポートしています:
@@ -221,7 +221,7 @@ def generate_summary(results, version):
 
 def write_artifacts(results, version):
     """成果物ファイルを作成"""
-    artifacts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "artifacts")
+    artifacts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "artifacts")
     os.makedirs(artifacts_dir, exist_ok=True)
     
     filename = os.path.join(artifacts_dir, f"ICC2_smoke_{version}.txt")
@@ -409,7 +409,7 @@ def main():
     # 入力ファイルがない場合はダミーファイルを生成
     if not input_files:
         log_message("INFO", "入力ファイルが指定されていません。ダミーファイルを生成します。")
-        input_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "inputs", "icc2")
+        input_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "inputs", "icc2")
         dummy_files = generate_dummy_files(input_dir)
         input_files = []
         for file_list in dummy_files.values():
@@ -428,10 +428,10 @@ def main():
     
     # 成果物ファイルの作成
     artifact_file = write_artifacts(results, version)
-    log_message("INFO", f"Output written to {artifact_file}")
+    log_message("INFO", f"成果物ファイルを作成しました: {artifact_file}")
     
     # ログの生成
-    logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+    logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "logs")
     os.makedirs(logs_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

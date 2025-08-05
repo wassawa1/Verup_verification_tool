@@ -45,11 +45,36 @@ desktop.ini
 report.csv
 report.html
 logs/
+logs/**/*.html
 artifacts/
 
-# 入力ファイルの例外 (一部はgitで管理するかもしれないので)
-# inputs/sample*.txt を管理したい場合は以下をコメントアウト
-# inputs/
+# ツール固有のログとdiff
+Apps/*/logs/
+Apps/*/logs/**/*.html
+Apps/*/logs/diffs/
+
+# 入力ファイルの例外（gitで管理するもの）
+!inputs/sample*.txt
+!inputs/README.md
 
 # デモ生成物とログは除外
 Apps/DemoTool/
+
+# テスト関連
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# 一時ファイル
+*.tmp
+*.bak
+*.log
+*.diff
+temp/
+tmp/
+
+# キャッシュファイル
+.mypy_cache/
+.pyre/
+.pytype/

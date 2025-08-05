@@ -267,6 +267,85 @@ def parse_content_for_structured_data(content_str):
                 "description": "新バージョンでエラーが完全に解消されました"
             })
     
+    # ログ比較情報の抽出
+    if "Log comparison:" in content_str:
+        result["type"] = "log_comparison"
+        
+        old_log_lines = 0
+        new_log_lines = 0
+        diff_count = 0
+        log_errors_old = 0
+        log_errors_new = 0
+        
+        # ログ情報を抽出
+        for line in lines:
+            if "Old log lines:" in line:
+                match = re.search(r'Old log lines:\s*(\d+)', line)
+                if match:
+                    old_log_lines = int(match.group(1))
+            elif "New log lines:" in line:
+                match = re.search(r'New log lines:\s*(\d+)', line)
+                if match:
+                    new_log_lines = int(match.group(1))
+            elif "Different lines:" in line:
+                match = re.search(r'Different lines:\s*(\d+)', line)
+                if match:
+                    diff_count = int(match.group(1))
+            elif "Errors in old log:" in line:
+                match = re.search(r'Errors in old log:\s*(\d+)', line)
+                if match:
+                    log_errors_old = int(match.group(1))
+            elif "Errors in new log:" in line:
+                match = re.search(r'Errors in new log:\s*(\d+)', line)
+                if match:
+                    log_errors_new = int(match.group(1))
+        
+        # ログサイズの検証項目
+        result["criteria"].append({
+            "name": "ログサイズの変化",
+            "status": "Success",
+            "description": f"旧ログ: {old_log_lines}行 → 新ログ: {new_log_lines}行"
+        })
+        
+        # 差分行数の検証項目
+        if diff_count > 0:
+            diff_percent = (diff_count / old_log_lines * 100) if old_log_lines > 0 else 0
+            status = "Success"
+            if diff_percent > 50:
+                status = "Failed"
+                desc = f"ログ内容に大きな変化があります: {diff_count}行の差分 ({diff_percent:.1f}%)"
+            else:
+                desc = f"ログ内容の差分: {diff_count}行 ({diff_percent:.1f}%)"
+                
+            result["criteria"].append({
+                "name": "ログ内容の差分",
+                "status": status,
+                "description": desc
+            })
+        else:
+            result["criteria"].append({
+                "name": "ログ内容の一致",
+                "status": "Success",
+                "description": "ログ内容が完全に一致しています"
+            })
+        
+        # エラー数の検証項目
+        if log_errors_old > 0 or log_errors_new > 0:
+            status = "Success"
+            if log_errors_new > log_errors_old:
+                status = "Failed"
+                desc = f"ログ内のエラー数が増加: {log_errors_old}件 → {log_errors_new}件"
+            elif log_errors_new < log_errors_old:
+                desc = f"ログ内のエラー数が減少: {log_errors_old}件 → {log_errors_new}件"
+            else:
+                desc = f"ログ内のエラー数が変化なし: {log_errors_old}件"
+                
+            result["criteria"].append({
+                "name": "ログ内のエラー数",
+                "status": status,
+                "description": desc
+            })
+    
     # 処理時間などの抽出（個別ファイルの処理時間など）
     file_times = []
     for line in lines:
@@ -285,7 +364,7 @@ def parse_content_for_structured_data(content_str):
                 "improvement": improvement
             })
             
-    # 複数の処理時間がある場合、まとめて検証項目を追加
+    # 複数の処理時間がある場合、まとめて検証項目を追加（平均改善率を計算）
     if file_times:
         # 個別ファイル処理の平均改善率
         total_improvement = sum(item["improvement"] for item in file_times)

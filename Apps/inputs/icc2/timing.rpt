@@ -1,0 +1,16 @@
+
+Timing Report
+============
+
+Setup violations: 2
+Hold violations: 1
+Total paths analyzed: 128
+Worst negative slack: -0.35ns
+Critical path: data_in[3] -> data_reg[3] -> data_out[3]
+
+Path details:
+  Start point: data_in[3]
+  End point: data_reg[3]
+  Timing requirement: 10.0ns
+  Actual delay: 10.35ns
+  VIOLATION: 0.35ns

@@ -275,6 +275,32 @@ def parse_icc2smoke_output(content):
         'memory_usage': 0
     }
     
+    # まずJSONファイルかどうかを確認（V2.0.0形式）
+    if content.startswith('{') and content.endswith('}'):
+        try:
+            # JSON形式であれば解析
+            json_data = json.loads(content)
+            
+            # サマリーから情報を取得
+            if 'summary' in json_data:
+                stats['processed_files'] = json_data['summary'].get('total_files', 0)
+                stats['rtl_modules'] = json_data.get('rtl_modules', 0)
+                
+            # タイミング情報を取得
+            if 'timing' in json_data:
+                stats['timing_violations'] = json_data['timing'].get('violations', 0)
+                
+            # パフォーマンス情報を取得
+            if 'performance' in json_data:
+                memory_str = json_data['performance'].get('memory', '0MB')
+                memory_match = re.search(r'(\d+)', memory_str)
+                stats['memory_usage'] = int(memory_match.group(1)) if memory_match else 0
+                
+            return stats
+        except json.JSONDecodeError:
+            # JSON解析に失敗した場合は通常のテキスト処理に進む
+            pass
+    
     # 処理ファイル数を抽出
     file_match = re.search(r'処理ファイル数:\s*(\d+)', content)
     if file_match:

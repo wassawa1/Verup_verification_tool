@@ -1,0 +1,16 @@
+
+Power Analysis Report
+===================
+
+Dynamic Power: 85.32 mW
+Leakage Power: 12.45 mW
+Total Power: 97.77 mW
+
+Power Breakdown:
+  - Sequential: 35.14 mW (36%)
+  - Combinational: 42.66 mW (44%)
+  - Clock: 19.97 mW (20%)
+
+Voltage: 1.2V
+Temperature: 25C
+Process: typical

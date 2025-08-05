@@ -1,0 +1,21 @@
+
+library(sample_lib) {
+    cell(BUF) {
+        pin(A) { direction: input; }
+        pin(Y) { direction: output; function: "A"; }
+    }
+    cell(INV) {
+        pin(A) { direction: input; }
+        pin(Y) { direction: output; function: "A'"; }
+    }
+    cell(AND2) {
+        pin(A) { direction: input; }
+        pin(B) { direction: input; }
+        pin(Y) { direction: output; function: "A B"; }
+    }
+    cell(OR2) {
+        pin(A) { direction: input; }
+        pin(B) { direction: input; }
+        pin(Y) { direction: output; function: "A+B"; }
+    }
+}

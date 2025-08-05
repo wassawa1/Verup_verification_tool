@@ -78,6 +78,7 @@ python run_update_tool## コアモジュール** (`core/`):
    
 3. **ログ検証**：各バージョン実行時のログを比較し、問題がないか確認
    - 警告・エラー解析：新たな警告やエラーが発生していないか
+   - ログdiff分析：新旧バージョン間のログ差分を視覚的に比較検証
    
 4. **総括**：すべての検証結果をまとめ、全体的な評価を行う
    - バージョン互換性評価：新バージョンが旧バージョンと互換性を保っているか
@@ -137,6 +138,11 @@ Verup_verification_tool/
 │   ├── SampleTool_1.0.0.txt
 │   └── SampleTool_2.0.0.txt
 ├── logs/                 # ログディレクトリ（自動生成）
+│   └── ToolName_OldVersion_NewVersion_YYYYMMDD_HHMMSS.log
+├── Apps/                 
+│   └── ICC2_smoke/       # ツール固有のディレクトリ
+│       ├── logs/         # ツール固有のログディレクトリ
+│       │   └── diffs/    # ログ比較diff HTMLファイル
 ├── docs/                 # ドキュメント
 │   └── config_comparator_guide.md # 設定ベースコンパレータガイド
 ├── report.csv            # CSVレポート
@@ -193,6 +199,8 @@ python run_update_tool.py --list
 
 3. **ログファイル**: `logs/` ディレクトリ内に各実行のログを保存
    - 各実行の詳細なログが日時付きで保存されます
+   - `Apps/<ツール名>/logs/diffs/` ディレクトリには新旧バージョンのログ差分を視覚的に表示するHTMLファイルが生成されます
+   - レポートの「ログ検証」項目からこのdiffファイルにリンクされています
 
 4. **成果物**: `artifacts/` ディレクトリ内に各ツールの出力結果を保存
    - 各バージョンごとの出力ファイルが保存されます
@@ -260,6 +268,7 @@ python run_update_tool.py --list
 | 2025/08/04 12:00:00 | SampleTool | 1.0.0       | 2.0.0       | 成果物   | Success  | 5%向上     | パフォーマンス検証    | [timing.log](timing.log)             |
 | 2025/08/04 12:00:00 | SampleTool | 1.0.0       | 2.0.0       | 成果物   | Success  | 問題なし    | サマリー情報検証      | [summary.txt](summary.txt)           |
 | 2025/08/04 12:00:00 | SampleTool | 1.0.0       | 2.0.0       | ログ     | Success  | エラーなし   | 警告・エラー解析      | [logfile.txt](logfile.txt)           |
+| 2025/08/04 12:00:00 | SampleTool | 1.0.0       | 2.0.0       | ログ     | Success  | 差分確認済   | ログ検証            | [log_diff.html](log_diff.html)        |
 | 2025/08/04 12:00:00 | SampleTool | 1.0.0       | 2.0.0       | 総括     | Success  | 安全に移行可 | バージョン互換性評価   | [overview.html](overview.html)       |
 
 **重要**: 各検証観点（動作、成果物、ログ、総括）と各項目の組み合わせで1行のレコードが生成されます。同じツールの検証であっても、複数の行に分かれて記録されます。検証項目はツールの種類や目的によってカスタマイズ可能です。システムはデフォルトの検証項目を備えていますが、ツール固有の検証項目も定義できます（例：ICC2_smokeツールには「メモリ使用量検証」という特有の検証項目があります）。
@@ -275,6 +284,7 @@ CSVレポートと同じ内容を視覚的に見やすく表示するHTMLビュ�
 - サマリー情報（成功・失敗・エラー件数）を表示
 - 検証結果に応じた色分け表示（Success: 緑、Failed: 赤、Error: 黄）
 - 各成果物やログファイルへのリンクを含む
+- ログ検証項目からは新旧バージョンのログdiffを色分け表示するHTMLファイルへリンク
 - 詳細分析セクションで各検証項目の詳細情報を確認可能
 
 ## カスタマイザーガイド
@@ -397,16 +407,32 @@ class SampletoolComparator(BaseComparator):
             new_log (str): 新バージョンのログファイルパス
             
         Returns:
-            dict: 比較結果 {'status': 'Success'/'Failed'/'Error', 'detail': '詳細情報'}
+            dict: 比較結果 {'status': 'Success'/'Failed'/'Error', 'detail': '詳細情報', 'log_diff': 'ログdiffへのパス'}
         """
         # 比較ロジック
         status = 'Success'
         detail = 'ログ検証成功'
         
+        # ログdiffの生成
+        diff_file = self._generate_log_diff(old_log, new_log)
+        
         return {
             'status': status,
-            'detail': detail
+            'detail': detail,
+            'log_diff': diff_file  # ログdiffへのパス
         }
+        
+    def _generate_log_diff(self, old_log, new_log):
+        """
+        新旧ログのdiffを比較するHTMLファイルを生成する
+        
+        Returns:
+            str: 生成したHTMLファイルへのパス
+        """
+        # diff生成ロジック
+        # ...
+        
+        return "logs/diffs/log_diff.html"  # 生成したdiffファイルへのパス
 ```
 
 カスタムコンパレータが見つからない場合や、エラーが発生した場合は、標準の比較ロジックが使用されます。
@@ -420,14 +446,15 @@ class SampletoolComparator(BaseComparator):
 TOOL_SPECIFIC_ITEMS = {
     'sampletool': [
         {'phase': '動作', 'item': '起動・実行確認', 'success_memo': '正常終了', 'failed_memo': '異常終了', 'link_type': 'log'},
+        {'phase': 'ログ', 'item': 'ログ検証', 'success_memo': '差分確認済', 'failed_memo': '差分に問題あり', 'link_type': 'log_diff'},
         # 他の検証項目...
     ],
     'icc2_smoke': [
         {'phase': '動作', 'item': '起動・実行確認', 'success_memo': '正常終了', 'failed_memo': '異常終了', 'link_type': 'log'},
         # icc2_smoke固有の検証項目
         {'phase': '成果物', 'item': 'メモリ使用量検証', 'success_memo': '改善', 'failed_memo': '悪化', 'link_type': 'log'},
+        {'phase': 'ログ', 'item': 'ログ検証', 'success_memo': '差分確認済', 'failed_memo': '差分に問題あり', 'link_type': 'log_diff'},
         # 他の検証項目...
-    ]
 }
 ```
 
@@ -601,16 +628,6 @@ class MynewtoolComparator(BaseComparator):
    - API変更時は下位互換性に配慮
    - ドキュメント（README）の更新が必須
 
-### ソースコード構造と依存関係
-
-```mermaid
-run_update_tool.py
-  ↓
-core/parser.py → core/tool_runner.py → comparators/xxx_comparator.py
-                                    ↓
-                                core/report.py → utils/parser.py
-                                                 utils/file_utils.py
-```
 
 ## システム実装の特徴
 

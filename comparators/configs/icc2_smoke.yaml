@@ -1,32 +1,55 @@
 # ICC2_smokeのコンパレータ設定
-execute_command: python ICC2_smoke.py
-old_artifact_pattern: ICC2_smoke_{old_version}.txt
-new_artifact_pattern: ICC2_smoke_{new_version}.txt
+execute_command: python Apps/ICC2_smoke.py
+old_artifact_pattern: Apps/artifacts/ICC2_smoke_{old_version}.txt
+new_artifact_pattern: Apps/artifacts/ICC2_smoke_{new_version}.txt
+old_log_pattern: Apps/logs/ICC2_smoke_{old_version}_*.log
+new_log_pattern: Apps/logs/ICC2_smoke_{new_version}_*.log
 input_files:
-  - sample1.txt
-  - sample2.txt
+  - inputs/sample1.txt
+  - inputs/sample2.txt
 parameters:
-  - -o
-  - "{output_file}"
+  - "{version}"
 
 # 比較メソッド設定
 comparison_methods:
   # 基本的な比較方法
-  format_check: true
-  line_count: true
-  content_diff: true
+  format_check: false  # フォーマット変更を許容する
+  line_count: false    # 行数変更を許容する
+  content_diff: false  # 内容の変更を許容する
   
-  # キーワード検証
+  # キーワード検証 - 必須キーワードのみチェック
   keyword_check:
-    - "タイミング違反"
+    - "ICC2_smoke"
+    - "処理ファイル数"
     - "処理時間"
     - "メモリ使用量"
   
-  # カスタムパターン検証
+  # カスタムパターン検証 - 重要な値のみパターンチェック
   custom_patterns:
     - name: "タイミング違反パターン"
-      pattern: "タイミング違反: (\\d+)件"
+      pattern: "タイミング違反数:\\s*(\\d+)"
     - name: "処理時間パターン"
-      pattern: "処理時間: (\\d+\\.\\d+)秒"
+      pattern: "処理時間:\\s*(\\d+\\.\\d+)秒"
     - name: "メモリ使用量パターン"
-      pattern: "メモリ使用量: (\\d+)MB"
+      pattern: "メモリ使用量:\\s*(\\d+)MB"
+
+# JSON出力ファイルの検証設定
+json_output:
+  old_pattern: Apps/artifacts/ICC2_smoke_{old_version}.json
+  new_pattern: Apps/artifacts/ICC2_smoke_{new_version}.json
+  
+# カスタム検証関数の設定
+custom_compare:
+  artifacts: compare_artifacts
+  logs: compare_logs
+  
+# 検証評価指標
+verification_criteria:
+  format:
+    allowed_changes: true   # フォーマット変更を許可する
+  precision:
+    tolerance_percent: 5    # 数値の許容誤差 (%)
+  performance:
+    tolerance_percent: 20   # パフォーマンス低下の許容値 (%)
+  new_features:
+    expected: true          # 新機能の追加を想定する

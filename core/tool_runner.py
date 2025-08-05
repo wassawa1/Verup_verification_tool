@@ -43,12 +43,27 @@ class ToolRunner:
         
         # ログファイルのセットアップ
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        if self.tool_name and self.old_version and self.new_version:
-            log_filename = f"{self.tool_name}_{self.old_version}_{self.new_version}_{timestamp}.log"
-        else:
-            log_filename = f"verup_verification_{timestamp}.log"
         
-        self.log_file = os.path.join(self.log_dir, log_filename)
+        # ツール固有のログディレクトリの処理
+        if self.tool_name and self.tool_name in ["ICC2_smoke"]:
+            # ICC2_smokeはApps/ICC2_smoke/logsディレクトリにログを保存
+            app_log_dir = os.path.join("Apps", self.tool_name, "logs")
+            os.makedirs(app_log_dir, exist_ok=True)
+            
+            if self.old_version and self.new_version:
+                log_filename = f"{self.tool_name}_{self.old_version}_{self.new_version}_{timestamp}.log"
+            else:
+                log_filename = f"{self.tool_name}_{timestamp}.log"
+                
+            self.log_file = os.path.join(app_log_dir, log_filename)
+        else:
+            # 本ツールのログは通常のlogsディレクトリに保存
+            if self.tool_name and self.old_version and self.new_version:
+                log_filename = f"{self.tool_name}_{self.old_version}_{self.new_version}_{timestamp}.log"
+            else:
+                log_filename = f"verup_verification_{timestamp}.log"
+                
+            self.log_file = os.path.join(self.log_dir, log_filename)
         
         # 標準出力のリダイレクトをセットアップ
         if not self.silent:
@@ -102,8 +117,11 @@ class ToolRunner:
                 self.output_dir
             )
             
+            # ログファイルパスを抽出してコンパレータに渡す
+            log_file_basename = os.path.basename(self.log_file) if self.log_file else None
+            
             # 比較の実行
-            result = comparator.run()
+            result = comparator.run(log_file_basename)
             
             # 成果物のパスを追加
             old_artifact_path, new_artifact_path = comparator.get_output_files()

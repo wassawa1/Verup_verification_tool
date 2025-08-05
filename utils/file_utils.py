@@ -109,15 +109,29 @@ def get_log_files(tool, version):
     Returns:
         str or None: 最新のログファイルパスまたはNone
     """
-    log_dir = "logs"
-    log_pattern = os.path.join(log_dir, f"{tool}_{version}_*.log")
-    logs = glob.glob(log_pattern)
+    log_dirs = []
+    
+    # ツール固有のログディレクトリを選択
+    if tool in ["ICC2_smoke"]:
+        # ICC2_smokeはApps/ICC2_smoke/logsディレクトリにログを保存
+        log_dirs.append(os.path.join("Apps", tool, "logs"))
+    else:
+        # 本ツールのログは通常のlogsディレクトリに保存
+        log_dirs.append("logs")
+    
+    logs = []
+    # ログディレクトリを検索
+    for log_dir in log_dirs:
+        log_pattern = os.path.join(log_dir, f"{tool}_{version}_*.log")
+        logs.extend(glob.glob(log_pattern))
+        
+        # 古いログパターンもチェック
+        if not logs:
+            old_pattern = os.path.join(log_dir, f"{tool}_{version}.log")
+            if os.path.exists(old_pattern):
+                logs.append(old_pattern)
     
     if not logs:
-        # 古いログパターンもチェック
-        old_pattern = os.path.join(log_dir, f"{tool}_{version}.log")
-        if os.path.exists(old_pattern):
-            return old_pattern
         return None
         
     # タイムスタンプで降順ソートし、最新のログを返す
@@ -137,8 +151,15 @@ def setup_logging(tool, old_version, new_version):
     Returns:
         tuple: (log_file_path, log_file_obj, tee_obj)
     """
+    # ツール固有のログディレクトリを選択
+    if tool in ["ICC2_smoke"]:
+        # ICC2_smokeはApps/ICC2_smoke/logsディレクトリにログを保存
+        log_dir = os.path.join("Apps", tool, "logs")
+    else:
+        # 本ツールのログは通常のlogsディレクトリに保存
+        log_dir = "logs"
+    
     # ログディレクトリを作成
-    log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
     
     # タイムスタンプとログファイル名を生成
