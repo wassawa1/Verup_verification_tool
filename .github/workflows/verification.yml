@@ -30,7 +30,7 @@ jobs:
         run: python run_update_tool.py --demo
       
       - name: レポートをアーティファクトとして保存
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: verification-reports
           path: |
