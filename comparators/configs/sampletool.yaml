@@ -1,0 +1,66 @@
+# SampleTool用の比較設定ファイル
+# このファイルはYAML形式で記述されています
+# カスタマイザーはこのファイルを編集するだけで比較ロジックを設定できます
+
+# ツール実行設定
+execute_command: "python {tool_path} {input_file} {parameters}"
+old_artifact_pattern: "SampleTool_{old_version}.txt"
+new_artifact_pattern: "SampleTool_{new_version}.txt"
+input_files: 
+  - "sample.txt"
+parameters:
+  - "-o"
+  - "{output_file}"
+
+# 比較方法の設定
+comparison_methods:
+  # ファイル形式やサイズの大きな変化をチェック
+  format_check: true
+  
+  # 出力ファイルの行数をチェック
+  line_count: true
+  
+  # 出力内容の差分をチェック
+  content_diff: true
+  
+  # 特定のキーワードの出現回数をチェック
+  keyword_check:
+    - "Total lines"
+    - "Total characters"
+    - "Total words"
+    
+  # 正規表現パターンによるチェック
+  custom_patterns:
+    # 行数情報を抽出して比較
+    - name: "行数"
+      pattern: "Total lines:\\s*(\\d+)"
+      
+    # 文字数情報を抽出して比較
+    - name: "文字数"
+      pattern: "Total characters:\\s*(\\d+)"
+      
+    # 単語数情報を抽出して比較
+    - name: "単語数"
+      pattern: "Total words:\\s*(\\d+)"
+      
+    # 平均行長（バージョン2.0.0で追加される機能）
+    - name: "平均行長"
+      pattern: "Average line length:\\s*(\\d+\\.\\d+)"
+      
+    # 頻出単語（バージョン2.0.0で追加される機能）
+    - name: "頻出単語"
+      pattern: "Top 5 words:[\\s\\S]+?"
+
+# 検証項目ごとの合格/不合格の判定基準
+verification_criteria:
+  performance:
+    # パフォーマンスの許容範囲（新バージョンが何%遅くても許容するか）
+    tolerance_percent: 10
+  
+  format:
+    # 出力フォーマット変更の許容
+    allowed_changes: false
+  
+  precision:
+    # 計算結果の精度（数値の何%の変動まで許容するか）
+    tolerance_percent: 1

@@ -1,0 +1,31 @@
+# DemoToolのコンパレータ設定
+execute_command: python DemoTool.py
+old_artifact_pattern: DemoTool_{old_version}.txt
+new_artifact_pattern: DemoTool_{new_version}.txt
+input_files:
+  - sample.txt
+parameters:
+  - -o
+  - "{output_file}"
+
+# 比較メソッド設定
+comparison_methods:
+  # 基本的な比較方法
+  format_check: true
+  line_count: true
+  content_diff: true
+  
+  # キーワード検証
+  keyword_check:
+    - "処理時間"
+    - "成功"
+    - "失敗"
+  
+  # カスタムパターン検証
+  custom_patterns:
+    - name: "処理時間パターン"
+      pattern: "処理時間: (\\d+\\.\\d+)秒"
+    - name: "成功パターン"
+      pattern: "成功"
+    - name: "失敗パターン"
+      pattern: "失敗|エラー|異常"

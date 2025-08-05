@@ -1,0 +1,40 @@
+name: バージョンアップ検証
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:  # 手動実行用
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Pythonセットアップ
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: 依存パッケージのインストール
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: CI環境セットアップを実行
+        run: python ci_setup.py
+      
+      - name: デモモードで検証ツールを実行
+        run: python run_update_tool.py --demo
+      
+      - name: レポートをアーティファクトとして保存
+        uses: actions/upload-artifact@v3
+        with:
+          name: verification-reports
+          path: |
+            report.csv
+            report.html
+            logs/
+            artifacts/
